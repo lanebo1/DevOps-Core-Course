@@ -12,6 +12,7 @@
 Create a **DevOps Info Service** - a web application providing detailed information about itself and its runtime environment. This foundation will grow throughout the course as you add containerization, CI/CD, monitoring, and persistence.
 
 **What You'll Learn:**
+
 - Web framework selection and implementation
 - System introspection and API design
 - Python best practices and documentation
@@ -50,6 +51,7 @@ app_python/
 #### 1.2 Choose Web Framework
 
 Select and justify your choice:
+
 - **Flask** - Lightweight, easy to learn
 - **FastAPI** - Modern, async, auto-documentation
 - **Django** - Full-featured, includes ORM
@@ -99,6 +101,7 @@ Return comprehensive service and system information:
 <summary>💡 Implementation Hints</summary>
 
 **Get System Information:**
+
 ```python
 import platform
 import socket
@@ -111,6 +114,7 @@ python_version = platform.python_version()
 ```
 
 **Calculate Uptime:**
+
 ```python
 start_time = datetime.now()
 
@@ -126,6 +130,7 @@ def get_uptime():
 ```
 
 **Request Information:**
+
 ```python
 # Flask
 request.remote_addr  # Client IP
@@ -194,6 +199,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ```
 
 **Test:**
+
 ```bash
 python app.py                    # Default: 0.0.0.0:5000
 PORT=8080 python app.py          # Custom port
@@ -209,6 +215,7 @@ HOST=127.0.0.1 PORT=3000 python app.py
 Create user-facing documentation:
 
 **Required Sections:**
+
 1. **Overview** - What the service does
 2. **Prerequisites** - Python version, dependencies
 3. **Installation**
@@ -233,6 +240,7 @@ Create user-facing documentation:
 Implement these in your code:
 
 **1. Clean Code Organization**
+
 - Clear function names
 - Proper imports grouping
 - Comments only where needed
@@ -355,6 +363,7 @@ venv/
 Document your implementation:
 
 **Required Sections:**
+
 1. **Framework Selection**
    - Your choice and why
    - Comparison table with alternatives
@@ -372,6 +381,7 @@ Document your implementation:
    - How you solved them
 
 **Required Screenshots:**
+
 - Main endpoint showing complete JSON
 - Health check response
 - Formatted/pretty-printed output
@@ -381,6 +391,7 @@ Document your implementation:
 **Objective:** Explore GitHub's social features that support collaboration and discovery.
 
 **Actions Required:**
+
 1. **Star** the course repository
 2. **Star** the [simple-container-com/api](https://github.com/simple-container-com/api) project — a promising open-source tool for container management
 3. **Follow** your professor and TAs on GitHub:
@@ -392,6 +403,7 @@ Document your implementation:
 **Document in LAB01.md:**
 
 Add a "GitHub Community" section (after Challenges & Solutions) with 1-2 sentences explaining:
+
 - Why starring repositories matters in open source
 - How following developers helps in team projects and professional growth
 
@@ -401,42 +413,50 @@ Add a "GitHub Community" section (after Challenges & Solutions) with 1-2 sentenc
 **Why Stars Matter:**
 
 **Discovery & Bookmarking:**
+
 - Stars help you bookmark interesting projects for later reference
 - Star count indicates project popularity and community trust
 - Starred repos appear in your GitHub profile, showing your interests
 
 **Open Source Signal:**
+
 - Stars encourage maintainers (shows appreciation)
 - High star count attracts more contributors
 - Helps projects gain visibility in GitHub search and recommendations
 
 **Professional Context:**
+
 - Shows you follow best practices and quality projects
 - Indicates awareness of industry tools and trends
 
 **Why Following Matters:**
 
 **Networking:**
+
 - See what other developers are working on
 - Discover new projects through their activity
 - Build professional connections beyond the classroom
 
 **Learning:**
+
 - Learn from others' code and commits
 - See how experienced developers solve problems
 - Get inspiration for your own projects
 
 **Collaboration:**
+
 - Stay updated on classmates' work
 - Easier to find team members for future projects
 - Build a supportive learning community
 
 **Career Growth:**
+
 - Follow thought leaders in your technology stack
 - See trending projects in real-time
 - Build visibility in the developer community
 
 **GitHub Best Practices:**
+
 - Star repos you find useful (not spam)
 - Follow developers whose work interests you
 - Engage meaningfully with the community
@@ -451,6 +471,7 @@ Add a "GitHub Community" section (after Challenges & Solutions) with 1-2 sentenc
 Implement the same service in a compiled language to prepare for multi-stage Docker builds (Lab 2).
 
 **Choose One:**
+
 - **Go** (Recommended) - Small binaries, fast compilation
 - **Rust** - Memory safety, modern features
 - **Java/Spring Boot** - Enterprise standard
@@ -470,6 +491,7 @@ app_go/  (or app_rust, app_java, etc.)
 ```
 
 **Requirements:**
+
 - Same two endpoints: `/` and `/health`
 - Same JSON structure
 - Document build process
@@ -536,22 +558,23 @@ func main() {
 ## How to Submit
 
 1. **Create Branch:**
+
    ```bash
    git checkout -b lab01
    ```
-
 2. **Commit Work:**
+
    ```bash
    git add app_python/
    git commit -m "feat: implement lab01 devops info service"
    git push -u origin lab01
    ```
-
 3. **Create Pull Requests:**
+
    - **PR #1:** `your-fork:lab01` → `course-repo:master`
    - **PR #2:** `your-fork:lab01` → `your-fork:master`
-
 4. **Verify:**
+
    - All files present
    - Screenshots included
    - Documentation complete
@@ -563,6 +586,7 @@ func main() {
 ### Main Tasks (10 points)
 
 **Application Functionality (3 pts):**
+
 - [ ] Service runs without errors
 - [ ] `GET /` returns all required fields:
   - [ ] Service metadata (name, version, description, framework)
@@ -574,12 +598,14 @@ func main() {
 - [ ] Configurable via environment variables (PORT, HOST)
 
 **Code Quality (2 pts):**
+
 - [ ] Clean code structure
 - [ ] PEP 8 compliant
 - [ ] Error handling implemented
 - [ ] Logging configured
 
 **Documentation (3 pts):**
+
 - [ ] `app_python/README.md` complete with all sections
 - [ ] `app_python/docs/LAB01.md` includes:
   - [ ] Framework justification
@@ -595,6 +621,7 @@ func main() {
 - [ ] At least 3 classmates followed on GitHub
 
 **Configuration (2 pts):**
+
 - [ ] `requirements.txt` with pinned versions
 - [ ] `.gitignore` properly configured
 - [ ] Environment variables working
@@ -612,16 +639,17 @@ func main() {
 
 ## Rubric
 
-| Criteria | Points | Description |
-|----------|--------|-------------|
-| **Functionality** | 3 pts | Both endpoints work with complete, correct data |
-| **Code Quality** | 2 pts | Clean, organized, follows Python standards |
-| **Documentation** | 3 pts | Complete README and lab submission docs |
-| **Configuration** | 2 pts | Dependencies, environment vars, .gitignore |
-| **Bonus** | 2.5 pts | Compiled language implementation |
-| **Total** | 12.5 pts | 10 pts required + 2.5 pts bonus |
+| Criteria                | Points   | Description                                     |
+| ----------------------- | -------- | ----------------------------------------------- |
+| **Functionality** | 3 pts    | Both endpoints work with complete, correct data |
+| **Code Quality**  | 2 pts    | Clean, organized, follows Python standards      |
+| **Documentation** | 3 pts    | Complete README and lab submission docs         |
+| **Configuration** | 2 pts    | Dependencies, environment vars, .gitignore      |
+| **Bonus**         | 2.5 pts  | Compiled language implementation                |
+| **Total**         | 12.5 pts | 10 pts required + 2.5 pts bonus                 |
 
 **Grading Scale:**
+
 - **10/10:** Perfect implementation, excellent documentation
 - **8-9/10:** All works, good docs, minor improvements possible
 - **6-7/10:** Core functionality present, basic documentation
