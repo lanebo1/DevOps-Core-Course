@@ -18,8 +18,31 @@ pip install -r requirements.txt
 
 ## Running the Application
 
+### Local Development
+
 ```bash
 python3 app.py
+```
+
+### Docker
+
+Build the image locally:
+
+```bash
+docker build -t devops-info-service .
+```
+
+Run a container:
+
+```bash
+docker run -p 5000:5000 devops-info-service
+```
+
+Pull from Docker Hub:
+
+```bash
+docker pull lanebo1/devops-info-service
+docker run -p 5000:5000 lanebo1/devops-info-service
 ```
 
 API Endpoints
