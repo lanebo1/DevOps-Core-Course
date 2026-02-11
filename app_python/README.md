@@ -1,5 +1,7 @@
 # DevOps Info Service (FastAPI)
 
+![CI](https://github.com/lanebo1/DevOps-Core-Course/workflows/Python%20CI/badge.svg)
+
 ## Overview
 
 A small web service that reports service metadata, system details, runtime uptime, and request information. Built as the foundation for future DevOps labs.
@@ -45,7 +47,23 @@ docker pull lanebo1/devops-info-service
 docker run -p 5000:5000 lanebo1/devops-info-service
 ```
 
-API Endpoints
+## Testing
+
+Install test dependencies and run the test suite:
+
+```bash
+pip install -r requirements.txt
+python -m pytest tests/ -v
+```
+
+The test suite covers:
+- Response status codes and content types
+- JSON response structure validation
+- System information fields presence
+- Error handling for invalid endpoints
+- Health check functionality
+
+## API Endpoints
 
 - `GET /` - Service and system information
 - `GET /health` - Health check
