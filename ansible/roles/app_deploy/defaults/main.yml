@@ -1,0 +1,12 @@
+---
+app_name: devops-info-service
+dockerhub_username: lanebo1
+dockerhub_password: ""
+dockerhub_login_enabled: false
+docker_image: "{{ dockerhub_username }}/devops-info-service"
+docker_image_tag: latest
+app_port: 5000
+app_container_name: devops-app
+app_restart_policy: unless-stopped
+app_environment: {}
+app_healthcheck_url: "http://127.0.0.1:{{ app_port }}/health"
