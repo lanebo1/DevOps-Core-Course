@@ -1,0 +1,9 @@
+---
+- name: Full server setup and app deployment
+  hosts: webservers
+  become: true
+
+  roles:
+    - common
+    - docker
+    - app_deploy

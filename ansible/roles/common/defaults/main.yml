@@ -1,0 +1,9 @@
+---
+common_packages:
+  - ca-certificates
+  - curl
+  - git
+  - vim
+  - htop
+  - python3-pip
+common_timezone: UTC
