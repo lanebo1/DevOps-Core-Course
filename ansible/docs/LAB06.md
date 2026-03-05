@@ -337,15 +337,17 @@ Created: `.github/workflows/ansible-deploy.yml`
 Jobs:
 
 1. `lint`
+   - runs on `self-hosted` runner
    - installs Ansible + ansible-lint
    - installs required collections
    - runs `ansible-lint` for playbooks/tasks
 2. `deploy`
-   - runs only on `push` and only when required secrets are present
-   - configures SSH key
+   - runs on `self-hosted` runner
+   - runs only on `push` and when `ANSIBLE_VAULT_PASSWORD` secret is present
+   - optionally configures SSH key from secret (if provided)
    - decrypts Vault password from secret
-   - runs `ansible-playbook playbooks/deploy.yml`
-   - verifies `/health` and `/`
+   - runs `ansible-playbook playbooks/deploy.yml` using repository inventory (`inventory/hosts.ini`)
+   - verifies `/health` and `/` via Ansible `uri` module on target host
 
 Path filters:
 
@@ -358,11 +360,14 @@ Path filters:
 Configured workflow to use:
 
 - `ANSIBLE_VAULT_PASSWORD`
-- `SSH_PRIVATE_KEY`
+- `VM_SUDO_PASSWORD` (optional, passed as `ANSIBLE_BECOME_PASS`)
+- `SSH_PRIVATE_KEY` (optional fallback if runner user does not already have the key from inventory path)
+
+Not required in self-hosted mode:
+
 - `VM_HOST`
 - `VM_USER`
-- `VM_SUDO_PASSWORD` (optional, passed as `ANSIBLE_BECOME_PASS`)
-- `APP_PORT` (optional; default 5000 in workflow expression)
+- `APP_PORT`
 
 ### 5.3 Local CI-equivalent validation
 
@@ -377,9 +382,20 @@ Local deploy verification:
 ```text
 ansible-playbook playbooks/deploy.yml
 PLAY RECAP ... failed=0
-curl http://127.0.0.1:5000/health -> healthy
+ansible webservers -m ansible.builtin.uri -a "url=http://127.0.0.1:5000/health status_code=200"
 ```
 
+` Note: While creating self-hosted runner I ran into errors: `
+
+```
+Http response code: BadGateway from 'POST https://api.github.com/actions/runner-registration' (Request Id: BC32:7406F:...)
+{
+  "message": "Server Error"
+}
+
+Response status code does not indicate success: 502 (Bad Gateway). 
+```
+` I could not configure local self-hosted runner. But: all secret variables, pipelines and configs are presnt and will function complete when running. `
 
 ### 5.4 Task 4 research answers
 
