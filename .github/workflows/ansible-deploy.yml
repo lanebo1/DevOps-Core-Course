@@ -1,0 +1,103 @@
+name: Ansible Deployment
+
+on:
+  push:
+    branches: *
+    paths:
+      - "ansible/**"
+      - "!ansible/docs/**"
+      - ".github/workflows/ansible-deploy.yml"
+  pull_request:
+    branches: *
+    paths:
+      - "ansible/**"
+      - "!ansible/docs/**"
+      - ".github/workflows/ansible-deploy.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Ansible Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible ansible-lint
+
+      - name: Install required collections
+        run: |
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Run ansible-lint
+        run: |
+          cd ansible
+          ansible-lint playbooks/*.yml roles/*/tasks/*.yml
+
+  deploy:
+    name: Deploy Application
+    needs: lint
+    if: github.event_name == 'push' && secrets.VM_HOST != '' && secrets.VM_USER != '' && secrets.SSH_PRIVATE_KEY != '' && secrets.ANSIBLE_VAULT_PASSWORD != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Install required collections
+        run: |
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Configure SSH access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare Vault password file
+        run: |
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > /tmp/vault_pass
+          chmod 600 /tmp/vault_pass
+
+      - name: Run Ansible deployment
+        env:
+          ANSIBLE_BECOME_PASS: ${{ secrets.VM_SUDO_PASSWORD }}
+        run: |
+          cd ansible
+          ansible-playbook playbooks/deploy.yml \
+            -i "${{ secrets.VM_HOST }}," \
+            -u "${{ secrets.VM_USER }}" \
+            --private-key ~/.ssh/id_ed25519 \
+            --vault-password-file /tmp/vault_pass \
+            -e "ansible_python_interpreter=/usr/bin/python3"
+
+      - name: Verify deployment endpoints
+        run: |
+          sleep 10
+          curl -fsS "http://${{ secrets.VM_HOST }}:${{ secrets.APP_PORT || '5000' }}/health"
+          curl -fsS "http://${{ secrets.VM_HOST }}:${{ secrets.APP_PORT || '5000' }}/"
+
+      - name: Remove temporary vault password file
+        if: always()
+        run: rm -f /tmp/vault_pass

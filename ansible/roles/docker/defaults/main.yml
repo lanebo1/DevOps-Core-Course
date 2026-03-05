@@ -10,3 +10,5 @@ docker_packages:
   - docker-buildx-plugin
   - docker-compose-plugin
   - python3-docker
+
+docker_force_gpg_retry: false
