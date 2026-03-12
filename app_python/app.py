@@ -4,10 +4,12 @@ Main application module (FastAPI).
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 import platform
 import socket
+import time
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
@@ -20,17 +22,68 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "5000"))
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+
+class JSONFormatter(logging.Formatter):
+    """Emit log records as single-line JSON objects."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        log_obj: dict = {
+            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            log_obj["exception"] = self.formatException(record.exc_info)
+        for key, value in record.__dict__.items():
+            if key not in {
+                "args", "asctime", "created", "exc_info", "exc_text",
+                "filename", "funcName", "levelname", "levelno", "lineno",
+                "message", "module", "msecs", "msg", "name", "pathname",
+                "process", "processName", "relativeCreated", "stack_info",
+                "thread", "threadName",
+            } and not key.startswith("_"):
+                log_obj[key] = value
+        return json.dumps(log_obj, default=str)
+
+
+handler = logging.StreamHandler()
+handler.setFormatter(JSONFormatter())
+logging.root.setLevel(logging.INFO)
+logging.root.handlers = [handler]
 logger = logging.getLogger("devops-info-service")
 
 # Application start time
 START_TIME = datetime.now(timezone.utc)
 
 app = FastAPI(title="DevOps Info Service", version="1.0.0")
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    client_ip = request.client.host if request.client else "unknown"
+    logger.info(
+        "HTTP request",
+        extra={
+            "method": request.method,
+            "path": request.url.path,
+            "client_ip": client_ip,
+        },
+    )
+    response = await call_next(request)
+    duration_ms = round((time.perf_counter() - start) * 1000, 2)
+    logger.info(
+        "HTTP response",
+        extra={
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "duration_ms": duration_ms,
+            "client_ip": client_ip,
+        },
+    )
+    return response
 
 
 def get_uptime() -> dict:
@@ -95,8 +148,6 @@ async def index(request: Request):
     client_host = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
 
-    logger.info("Request: %s %s", request.method, request.url.path)
-
     return {
         "service": {
             "name": "devops-info-service",
@@ -136,5 +187,8 @@ async def health():
 
 
 if __name__ == "__main__":
-    logger.info("Starting DevOps Info Service on %s:%s", HOST, PORT)
+    logger.info(
+        "Starting DevOps Info Service",
+        extra={"host": HOST, "port": PORT, "debug": DEBUG},
+    )
     uvicorn.run("app:app", host=HOST, port=PORT, reload=DEBUG)
