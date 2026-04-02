@@ -1,0 +1,87 @@
+# Default values for devops-info-service.
+# These values can be overridden by environment-specific files (values-dev.yaml, values-prod.yaml)
+# or with --set flags at install time.
+
+replicaCount: 3
+
+image:
+  repository: lanebo1/devops-info-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 5000
+  nodePort: 30080
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Container port the application listens on
+containerPort: 5000
+
+# Rolling update strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+# Liveness probe — restarts containers stuck in a bad state
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 5000
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Readiness probe — prevents premature traffic routing
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 5000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod-level security context
+podSecurityContext:
+  runAsUser: 999
+  runAsGroup: 999
+  fsGroup: 999
+
+# Container-level security context
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+
+# Extra environment variables injected into the container
+env:
+  - name: HOST
+    value: "0.0.0.0"
+  - name: PORT
+    value: "5000"
+
+# Hooks configuration
+hooks:
+  preInstall:
+    enabled: true
+    image: busybox
+    weight: "-5"
+  postInstall:
+    enabled: true
+    image: busybox
+    weight: "5"
