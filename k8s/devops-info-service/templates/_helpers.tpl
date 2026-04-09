@@ -47,3 +47,21 @@ Must remain stable across upgrades.
 app.kubernetes.io/name: {{ include "devops-info-service.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Service account name for the workload (Vault Kubernetes auth binds to this name).
+*/}}
+{{- define "devops-info-service.serviceAccountName" -}}
+{{- if .Values.serviceAccount.name }}
+{{- .Values.serviceAccount.name }}
+{{- else }}
+{{- include "devops-info-service.fullname" . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Name of the Helm-managed credentials Secret (username / password keys).
+*/}}
+{{- define "devops-info-service.secretName" -}}
+{{- printf "%s-secret" (include "devops-info-service.fullname" .) }}
+{{- end }}

@@ -75,6 +75,26 @@ env:
   - name: PORT
     value: "5000"
 
+# Opaque Secret with username/password — override at install time; never commit real values.
+secrets:
+  enabled: true
+  username: "placeholder-username"
+  password: "placeholder-password"
+
+# Dedicated ServiceAccount for the app (required for Vault Kubernetes auth).
+serviceAccount:
+  create: false
+  name: ""
+  automountToken: true
+
+# Vault Agent Injector sidecar — enable after Vault is installed and role/policy exist.
+vault:
+  injector:
+    enabled: false
+  role: devops-info-service
+  # KV v2 path passed to the injector (logical path includes /data/ segment).
+  secretPath: secret/data/myapp/config
+
 # Hooks configuration
 hooks:
   preInstall:
