@@ -3,6 +3,11 @@
 
 replicaCount: 5
 
+environment: prod
+
+persistence:
+  enabled: false
+
 image:
   tag: "latest"
   pullPolicy: IfNotPresent

@@ -99,18 +99,41 @@ class TestIndexEndpoint:
 
         endpoints = data["endpoints"]
         assert isinstance(endpoints, list)
-        assert len(endpoints) == 2
+        assert len(endpoints) == 3
 
-        # Check that both expected endpoints are listed
+        # Check that expected endpoints are listed
         endpoint_paths = [ep["path"] for ep in endpoints]
         assert "/" in endpoint_paths
         assert "/health" in endpoint_paths
+        assert "/visits" in endpoint_paths
 
         # Verify endpoint structure
         for endpoint in endpoints:
             assert "path" in endpoint
             assert "method" in endpoint
             assert "description" in endpoint
+
+
+class TestVisitsEndpoint:
+    """Tests for GET /visits and visit counter persistence behavior."""
+
+    def test_visits_starts_at_zero(self, client):
+        response = client.get("/visits")
+        assert response.status_code == 200
+        assert response.json()["visits"] == 0
+
+    def test_root_increments_visits(self, client):
+        client.get("/")
+        client.get("/")
+        response = client.get("/visits")
+        assert response.status_code == 200
+        assert response.json()["visits"] == 2
+
+    def test_visits_does_not_increment_counter(self, client):
+        client.get("/visits")
+        client.get("/visits")
+        response = client.get("/visits")
+        assert response.json()["visits"] == 0
 
 
 class TestHealthEndpoint:

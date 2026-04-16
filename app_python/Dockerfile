@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN groupadd -g 999 appgroup && useradd -r -u 999 -g appgroup appuser
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-RUN chown -R appuser:appuser /app
+RUN mkdir -p /data && chown -R appuser:appgroup /app /data
 
 USER appuser
 

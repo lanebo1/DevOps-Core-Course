@@ -31,6 +31,15 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "devops-info-service.fullname" . }}-config
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "devops-info-service.fullname" . }}-data
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -40,11 +49,21 @@ spec:
               protocol: TCP
           env:
             {{- toYaml .Values.env | nindent 12 }}
-          {{- if .Values.secrets.enabled }}
           envFrom:
+            {{- if .Values.secrets.enabled }}
             - secretRef:
                 name: {{ include "devops-info-service.secretName" . }}
-          {{- end }}
+            {{- end }}
+            - configMapRef:
+                name: {{ include "devops-info-service.fullname" . }}-env
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: /data
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:

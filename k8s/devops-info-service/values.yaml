@@ -2,7 +2,8 @@
 # These values can be overridden by environment-specific files (values-dev.yaml, values-prod.yaml)
 # or with --set flags at install time.
 
-replicaCount: 3
+# ReadWriteOnce PVC (default persistence) attaches to one node; keep a single replica when persistence is enabled.
+replicaCount: 1
 
 image:
   repository: lanebo1/devops-info-service
@@ -68,12 +69,24 @@ securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: false
 
+# Application environment label and logging (also provided via ConfigMap envFrom).
+environment: dev
+logLevel: INFO
+
 # Extra environment variables injected into the container
 env:
   - name: HOST
     value: "0.0.0.0"
   - name: PORT
     value: "5000"
+  - name: VISITS_FILE_PATH
+    value: "/data/visits"
+
+# Persistent storage for the visit counter file
+persistence:
+  enabled: true
+  size: 100Mi
+  storageClass: ""
 
 # Opaque Secret with username/password — override at install time; never commit real values.
 secrets:

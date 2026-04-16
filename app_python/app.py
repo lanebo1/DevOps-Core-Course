@@ -4,12 +4,15 @@ Main application module (FastAPI).
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import platform
 import socket
+import tempfile
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
@@ -28,6 +31,8 @@ import uvicorn
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "5000"))
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+_DEFAULT_VISITS_PATH = "/data/visits"
+LOG_LEVEL_NAME = os.getenv("LOG_LEVEL", "INFO").upper()
 
 
 class JSONFormatter(logging.Formatter):
@@ -56,9 +61,74 @@ class JSONFormatter(logging.Formatter):
 
 handler = logging.StreamHandler()
 handler.setFormatter(JSONFormatter())
-logging.root.setLevel(logging.INFO)
+logging.root.setLevel(getattr(logging, LOG_LEVEL_NAME, logging.INFO))
 logging.root.handlers = [handler]
 logger = logging.getLogger("devops-info-service")
+
+_visits_lock = asyncio.Lock()
+
+
+def _visits_path() -> str:
+    return os.getenv("VISITS_FILE_PATH", _DEFAULT_VISITS_PATH)
+
+
+def _read_visits_sync() -> int:
+    path = _visits_path()
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = f.read().strip()
+            return int(raw) if raw else 0
+    except FileNotFoundError:
+        return 0
+    except ValueError:
+        logger.warning("Invalid visits file content; resetting counter", extra={"path": path})
+        return 0
+
+
+def _write_visits_sync(count: int) -> None:
+    path = _visits_path()
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    dir_for_tmp = parent if parent else "."
+    fd, tmp_path = tempfile.mkstemp(
+        prefix=".visits_",
+        suffix=".tmp",
+        dir=dir_for_tmp,
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp:
+            tmp.write(str(count))
+        os.replace(tmp_path, path)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+async def read_visits_count() -> int:
+    async with _visits_lock:
+        return await asyncio.to_thread(_read_visits_sync)
+
+
+async def increment_visits_count() -> int:
+    async with _visits_lock:
+        count = await asyncio.to_thread(_read_visits_sync)
+        count += 1
+        await asyncio.to_thread(_write_visits_sync, count)
+        return count
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    initial = await read_visits_count()
+    logger.info(
+        "Visits counter initialized",
+        extra={"path": _visits_path(), "initial_count": initial},
+    )
+    yield
 
 # Application start time
 START_TIME = datetime.now(timezone.utc)
@@ -95,7 +165,7 @@ system_info_collection_seconds = Histogram(
 
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="DevOps Info Service", version="1.0.0")
+app = FastAPI(title="DevOps Info Service", version="1.0.0", lifespan=lifespan)
 
 
 @app.middleware("http")
@@ -214,6 +284,7 @@ async def metrics():
 async def index(request: Request):
     """Main endpoint - service and system information."""
     devops_info_endpoint_calls.labels(endpoint="/").inc()
+    await increment_visits_count()
     uptime = get_uptime()
     now = datetime.now(timezone.utc)
 
@@ -243,7 +314,19 @@ async def index(request: Request):
         "endpoints": [
             {"path": "/", "method": "GET", "description": "Service information"},
             {"path": "/health", "method": "GET", "description": "Health check"},
+            {"path": "/visits", "method": "GET", "description": "Persisted visit counter"},
         ],
+    }
+
+
+@app.get("/visits")
+async def visits():
+    """Return the current persisted visit count (root path increments the counter)."""
+    devops_info_endpoint_calls.labels(endpoint="/visits").inc()
+    count = await read_visits_count()
+    return {
+        "visits": count,
+        "path": _visits_path(),
     }
 
 

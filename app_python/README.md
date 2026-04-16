@@ -65,13 +65,26 @@ The test suite covers:
 
 ## API Endpoints
 
-- `GET /` - Service and system information
+- `GET /` - Service and system information (increments the persisted visit counter)
+- `GET /visits` - Current visit counter (stored under `VISITS_FILE_PATH`)
 - `GET /health` - Health check
+
+## Visit counter and Docker Compose
+
+The service persists a hit counter on disk (default path `/data/visits`). Each `GET /` increments the counter; `GET /visits` returns the current value without incrementing.
+
+Local persistence with Compose uses a **named Docker volume** (`visits_data`) mounted at `/data`, so the non-root app user (UID 999) can write the visits file.
+```bash
+docker compose up --build
+```
 
 ## Configuration
 
-| Variable  | Default     | Description         |
-| --------- | ----------- | ------------------- |
-| `HOST`  | `0.0.0.0` | Bind address        |
-| `PORT`  | `5000`    | Server port         |
-| `DEBUG` | `False`   | Enables auto-reload |
+| Variable            | Default       | Description                          |
+| ------------------- | ------------- | ------------------------------------ |
+| `HOST`              | `0.0.0.0`     | Bind address                        |
+| `PORT`              | `5000`        | Server port                         |
+| `DEBUG`             | `False`       | Enables auto-reload                 |
+| `VISITS_FILE_PATH`  | `/data/visits`| File used for the visit counter     |
+| `APP_ENV`           | *(unset)*   | Optional label injected via Kubernetes ConfigMap |
+| `LOG_LEVEL`         | `INFO`        | Root logging level name             |
