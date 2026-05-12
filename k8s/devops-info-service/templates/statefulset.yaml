@@ -1,20 +1,17 @@
-{{- if and (not .Values.rollout.enabled) (not .Values.statefulset.enabled) }}
+{{- if .Values.statefulset.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "devops-info-service.fullname" . }}
   labels:
     {{- include "devops-info-service.labels" . | nindent 4 }}
 spec:
+  serviceName: {{ include "devops-info-service.headlessServiceName" . }}
   replicas: {{ .Values.replicaCount }}
+  podManagementPolicy: {{ .Values.statefulset.podManagementPolicy }}
   selector:
     matchLabels:
       {{- include "devops-info-service.selectorLabels" . | nindent 6 }}
-  strategy:
-    type: {{ .Values.strategy.type }}
-    rollingUpdate:
-      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
-      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
   template:
     metadata:
       labels:
@@ -37,11 +34,6 @@ spec:
         - name: config
           configMap:
             name: {{ include "devops-info-service.fullname" . }}-config
-        {{- if .Values.persistence.enabled }}
-        - name: data
-          persistentVolumeClaim:
-            claimName: {{ include "devops-info-service.fullname" . }}-data
-        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -88,4 +80,20 @@ spec:
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          {{- include "devops-info-service.labels" . | nindent 10 }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass | quote }}
+        {{- end }}
+  {{- end }}
 {{- end }}
